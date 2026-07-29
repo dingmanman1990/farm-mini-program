@@ -195,7 +195,7 @@ body{max-width:480px;margin:0 auto;min-height:100vh;padding-bottom:68px;position
   <div id="bonus-card" class="card bonus-card" style="display:none">
     <div class="bonus-emoji">🎉</div>
     <div class="bonus-title">全部完成！</div>
-    <div class="bonus-sub">+3阳光+3颗种子 · 小狗熊今晚不来啦</div>
+    <div class="bonus-sub">+3阳光 · 小狗熊今晚不来啦</div>
     <button class="farm-btn" onclick="goPage('farm')">去农场看看我的菜园 →</button>
   </div>
 
@@ -296,12 +296,12 @@ const CROP_EMOJI={sunflower:'🌻',carrot:'🥕',tulip:'🌷',apple:'🍎',tomat
 const CROP_COIN={sunflower:10,carrot:10,tulip:10,apple:10,tomato:10,strawberry:10,sunflower_bonus:10}; // ★ 统一10金币
 const STAGE_EMOJI={seed:'🌰',sprout:'🌱',bloom:'🌸',ripe:null};
 
-// ★ 金币商城：看电视和玩游戏都是15分钟
+// ★ 金币商城：看电视60/玩游戏80/买玩具200/住酒店500
 const COIN_SHOP=[
   {key:'tv',emoji:'📺',name:'看电视',desc:'奖励看电视15分钟',coin:60},
   {key:'game',emoji:'🎮',name:'玩游戏',desc:'奖励玩游戏15分钟',coin:80},
-  {key:'toy',emoji:'🧸',name:'买玩具',desc:'可以买一个小玩具',coin:100},
-  {key:'hotel',emoji:'🏨',name:'住酒店',desc:'周末住一晚酒店',coin:200}
+  {key:'toy',emoji:'🧸',name:'买玩具',desc:'可以买一个小玩具',coin:200},
+  {key:'hotel',emoji:'🏨',name:'住酒店',desc:'周末住一晚酒店',coin:500}
 ];
 
 let state=loadState();
@@ -362,12 +362,12 @@ function toggleTask(sub,key){
     if(idx>=0)state.user.bag.splice(idx,1);
   }
 
+  // ★ 三科全完成：额外奖励阳光（不再额外送种子，每天最多3颗种子=三科各1颗）
   const allDone=['yuwen','shuxue','yingyu'].every(s=>SUBJECTS[s].tasks.every(t=>state.tasks[s][t.key]));
   if(allDone){
     if(!state._bonusGiven){
       state.user.sunshine+=3;
-      BONUS_SEEDS.forEach(seed=>state.user.bag.push({...seed,type:'seed',qty:1}));
-      state._bonusGiven=true;showToast('🌟 三科全完成！+3☀️ +3颗种子！');
+      state._bonusGiven=true;showToast('🌟 三科全完成！+3☀️');
     }
   }else{state._bonusGiven=false}
   saveState(state);renderCheckin();
@@ -385,15 +385,21 @@ function plantSeed(plotIdx,seedKey){
   p.crop=seedKey;p.stage='seed';p.plantedAt=Date.now();p.health=5;p.withered=false;
   saveState(state);startGrowth(plotIdx);renderFarm();renderCheckin();
 }
+// ★ 修改：生长周期改为每天推进一个阶段（24小时/阶段），4天成熟
+const STAGE_HOURS = 24; // 每阶段24小时
 function startGrowth(idx){
   const tick=()=>{
     const p=state.plots[idx];if(!p||!p.crop)return;
-    const secs=(Date.now()-p.plantedAt)/1000;
-    if(secs>=6)p.stage='ripe';else if(secs>=4)p.stage='bloom';else if(secs>=2)p.stage='sprout';
+    const hours=(Date.now()-p.plantedAt)/3600000; // 毫秒转小时
+    // 4个阶段：0~24h种子，24~48h发芽，48~72h开花，72~96h成熟
+    if(hours>=STAGE_HOURS*3)p.stage='ripe';
+    else if(hours>=STAGE_HOURS*2)p.stage='bloom';
+    else if(hours>=STAGE_HOURS)p.stage='sprout';
+    else p.stage='seed';
     saveState(state);renderFarm();
-    if(p.stage!=='ripe')setTimeout(tick,1000);
+    if(p.stage!=='ripe')setTimeout(tick,60000); // 每分钟检查一次
   }
-  setTimeout(tick,1000);
+  setTimeout(tick,3000);
 }
 function harvest(idx){
   const p=state.plots[idx];
@@ -520,6 +526,8 @@ function goPage(name){
 }
 
 renderCheckin();
+// ★ 页面加载时重新启动所有已种作物的生长检测（处理跨天生长）
+state.plots.forEach((p,i)=>{if(p.crop&&p.stage!=='ripe')startGrowth(i);});
 const hour=new Date().getHours();
 if(hour>=20){
   const undone=['yuwen','shuxue','yingyu'].filter(s=>!SUBJECTS[s].tasks.every(t=>state.tasks[s][t.key]));
