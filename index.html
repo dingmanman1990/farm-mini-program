@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="方块农场">
+<meta name="theme-color" content="#5DBEF5">
+<link rel="icon" type="image/png" href="/fish_icon.png">
+<link rel="apple-touch-icon" href="/fish_icon_180.png">
+<link rel="manifest" href="/manifest.json">
+<title>学习农场方块世界</title>
+<style>
+/* ========== 我的世界风格：方块像素 明亮鲜艳配色 ========== */
+:root{
+  --grass:#6BCE3A;--grass-dk:#4FA82A;--grass-lt:#8FE55A;
+  --dirt:#FFB347;--dirt-dk:#FF9F1C;--dirt-lt:#FFCB5C;
+  --stone:#B0B0B0;--stone-dk:#909090;
+  --sky:#5DBEF5;--sky-lt:#A5E0FF;
+  --wood:#FFB347;--wood-dk:#FF9F1C;
+  --diamond:#4FE0D0;--gold:#FFD93D;--red:#FF6B6B;--emerald:#3DEB7A;--orange:#FF9F1C;--purple:#C77DFF;--pink:#FF8FCB;
+  --water:#4FB0F5;
+  --txt:#3A3A3A;--txt-w:#FFFFFF;--sub:#6A5A4A;
+  --card:#FFFAEC;--card-dk:#FFF4D6;
+  --border:#6A4A2A;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;color:var(--txt);background:var(--sky);font-size:15px;line-height:1.5}
+body{max-width:480px;margin:0 auto;min-height:100vh;padding-bottom:68px;position:relative;background:linear-gradient(180deg,#5DBEF5 0%,#5DBEF5 8%,#6BCE3A 8%,#6BCE3A 100%)}
+
+/* 像素方块通用 */
+.px{border:4px solid var(--border);border-radius:0;box-shadow:0 4px 0 var(--border),0 6px 10px rgba(0,0,0,0.12)}
+.px-btn{border:3px solid var(--border);border-radius:0;box-shadow:0 4px 0 var(--border);cursor:pointer;font-weight:700;font-family:inherit;transition:all .08s}
+.px-btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--border)}
+
+/* 顶部 */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 8px;background:var(--dirt-dk)}
+.hello{font-size:16px;font-weight:700;color:#fff;text-shadow:2px 2px 0 var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+.hello-sub{font-size:13px;color:var(--gold);text-shadow:1px 1px 0 var(--border);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+.res-pills{display:flex;gap:6px;flex-wrap:nowrap;justify-content:flex-end}
+.res-pill{background:var(--dirt);border:3px solid var(--border);padding:5px 10px;font-size:13px;font-weight:700;color:#fff;box-shadow:0 3px 0 var(--border);white-space:nowrap}
+
+/* 进度条 */
+.progress-wrap{padding:0 16px 12px;background:var(--dirt-dk)}
+.progress-bar{height:18px;background:#D4A580;border:3px solid var(--border);overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,#6BCE3A,#3DEB7A,#FFD93D);transition:width .5s}
+.progress-text{font-size:13px;color:#fff;text-shadow:1px 1px 0 var(--border);margin-top:4px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* 卡片 */
+.card{background:var(--card);border:4px solid var(--border);border-radius:0;padding:14px;margin:10px 16px;box-shadow:0 4px 0 var(--border),0 6px 10px rgba(0,0,0,0.12)}
+.page-title{font-size:22px;font-weight:700;color:#fff;text-shadow:2px 2px 0 var(--border);margin:8px 16px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.page-sub{font-size:14px;color:var(--gold);text-shadow:1px 1px 0 var(--border);margin:0 16px 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* 学科 */
+.sub-block{position:relative;transition:all .15s}
+.sub-block.is-done{background:linear-gradient(135deg,#8FE55A,var(--card));border-color:var(--emerald)}
+.sub-head{display:flex;align-items:center;margin-bottom:12px}
+.sub-icon{width:52px;height:52px;border:3px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:28px;margin-right:12px;box-shadow:0 3px 0 var(--border)}
+.icon-yu{background:var(--gold)}
+.icon-shu{background:var(--diamond)}
+.icon-ying{background:#4FB0F5}
+.sub-info{flex:1;min-width:0}
+.sub-title{font-size:18px;font-weight:700;color:#3A3A3A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sub-desc{font-size:12px;color:var(--sub);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{padding:4px 12px;border:3px solid var(--border);font-size:13px;font-weight:700;box-shadow:0 2px 0 var(--border);white-space:nowrap;flex-shrink:0}
+.badge-ok{background:var(--emerald);color:#fff}
+.badge-pending{background:var(--stone);color:#fff}
+
+/* 任务行 */
+.task-row{display:flex;align-items:center;background:var(--card-dk);border:3px solid var(--border);padding:12px;margin-bottom:8px;cursor:pointer;transition:all .08s}
+.task-row:active{transform:translateY(2px);box-shadow:0 1px 0 var(--border)}
+.task-row.done{background:var(--grass-lt);border-color:var(--emerald)}
+.task-left{flex:1;min-width:0;overflow:hidden}
+.task-name{font-size:15px;font-weight:700;color:#3A3A3A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.task-desc{font-size:12px;color:var(--sub);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.task-check{width:36px;height:36px;border:3px solid var(--border);background:var(--stone);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;box-shadow:0 3px 0 var(--border);transition:all .15s;flex-shrink:0;margin-left:8px}
+.task-check.checked{background:var(--emerald);color:#fff;box-shadow:0 3px 0 #2A9A4A}
+
+/* 彩蛋卡 */
+.bonus-card{background:linear-gradient(135deg,var(--gold),var(--emerald));text-align:center;color:#fff;border-color:var(--border)}
+.bonus-emoji{font-size:40px}
+.bonus-title{font-size:20px;font-weight:700;color:#fff;text-shadow:2px 2px 0 var(--border);white-space:nowrap}
+.bonus-sub{font-size:13px;color:#fff;text-shadow:1px 1px 0 var(--border);margin:6px 0 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.farm-btn{display:block;height:46px;line-height:40px;border:3px solid var(--border);border-radius:0;text-align:center;font-size:15px;font-weight:700;color:#fff;background:var(--grass-dk);box-shadow:0 4px 0 var(--border);cursor:pointer;width:100%;font-family:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* 警告卡 */
+.warn-card{background:var(--orange);border-color:var(--border)}
+.warn-title{font-size:16px;font-weight:700;color:#fff;text-shadow:1px 1px 0 var(--border);white-space:nowrap}
+.warn-sub{font-size:13px;color:#fff;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* TabBar */
+.tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;height:64px;background:var(--dirt-dk);border-top:4px solid var(--border);max-width:480px;margin:0 auto}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;color:#5A4A3A;cursor:pointer;transition:all .1s;border-right:2px solid var(--dirt)}
+.tab:last-child{border-right:none}
+.tab.active{background:var(--grass);color:#fff}
+.tab.active .tab-icon{transform:scale(1.15)}
+.tab-icon{font-size:22px;transition:transform .15s}
+
+/* 农场 */
+.farm-header{text-align:center;padding:12px 16px 4px}
+.farm-title{font-size:22px;font-weight:700;color:#fff;text-shadow:2px 2px 0 var(--border);white-space:nowrap}
+.farm-sub{font-size:13px;color:var(--gold);text-shadow:1px 1px 0 var(--border);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.farm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:8px 16px}
+.plot{aspect-ratio:1;background:linear-gradient(180deg,#FFCB5C 0%,#FFB347 100%);border:3px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;cursor:pointer;box-shadow:0 3px 0 var(--border)}
+.plot::before{content:'';position:absolute;top:0;left:0;right:0;height:30%;background:linear-gradient(180deg,#6BCE3A 0%,transparent 100%)}
+.crop-emoji{font-size:30px;z-index:1;transition:all .5s}
+.plot.empty .crop-emoji{font-size:18px;opacity:0.5}
+.plot.ripe .crop-emoji{animation:glow 1.5s ease-in-out infinite}
+@keyframes glow{0%,100%{filter:drop-shadow(0 0 0 #FFD700)}50%{filter:drop-shadow(0 0 8px #FFD700);transform:scale(1.1)}}
+.plot.withered .crop-emoji{filter:grayscale(0.9) brightness(0.6);animation:shake 1.5s ease-in-out infinite}
+@keyframes shake{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
+.plot-health{position:absolute;top:2px;right:3px;font-size:9px;color:#fff;background:rgba(90,74,58,0.8);padding:1px 4px;border:1px solid var(--border);z-index:2;white-space:nowrap}
+
+/* 小狗熊 */
+.bear{position:absolute;top:40%;left:-15%;width:28px;height:28px;font-size:22px;z-index:3;transform:translateY(-50%);animation:bearWalk 3s linear infinite}
+@keyframes bearWalk{0%{left:-15%;transform:translateY(-50%) scaleX(1)}45%{left:45%;transform:translateY(-50%) scaleX(1)}50%{left:45%;transform:translateY(-50%) scaleX(-1)}95%{left:100%;transform:translateY(-50%) scaleX(-1)}100%{left:-15%;transform:translateY(-50%) scaleX(1)}}
+
+/* 页面切换 */
+.page{display:none}
+.page.active{display:block;animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* 桌面提示 */
+.tip-card{background:var(--gold);border-color:var(--border);cursor:pointer}
+.tip-title{font-size:15px;font-weight:700;color:#3A3A3A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tip-sub{font-size:13px;color:#5A4A3A;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* 统计 */
+.stat-total{text-align:center;background:linear-gradient(135deg,var(--diamond),var(--emerald));border-color:var(--border)}
+.stat-total .stat-num{font-size:48px;font-weight:700;color:#fff;text-shadow:3px 3px 0 var(--border)}
+.stat-total .stat-label{font-size:14px;color:#fff;text-shadow:1px 1px 0 var(--border);white-space:nowrap}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:0 16px}
+.stat-mini{text-align:center;background:var(--card);border:3px solid var(--border);padding:14px 8px;box-shadow:0 3px 0 var(--border)}
+.stat-emoji{font-size:28px}
+.stat-mini-num{font-size:22px;font-weight:700;color:#3A3A3A}
+.stat-mini-label{font-size:12px;color:var(--sub);white-space:nowrap}
+
+/* Toast */
+.toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--grass-dk);color:#fff;padding:14px 28px;border:3px solid var(--border);font-size:15px;font-weight:700;z-index:999;opacity:0;transition:all .3s;pointer-events:none;box-shadow:0 4px 0 var(--border);text-shadow:1px 1px 0 var(--border);white-space:nowrap;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+
+/* 弹窗 */
+.modal-mask{position:fixed;inset:0;background:rgba(90,74,58,0.5);display:flex;align-items:center;justify-content:center;z-index:998}
+.modal-box{width:82%;background:var(--card);border:4px solid var(--border);border-radius:0;padding:24px 20px;text-align:center;box-shadow:0 6px 0 var(--border),0 10px 20px rgba(0,0,0,0.15)}
+.modal-title{font-size:18px;font-weight:700;color:#3A3A3A;white-space:nowrap}
+.modal-content{font-size:14px;color:#3A3A3A;margin:12px 0 20px;line-height:1.6}
+.modal-btns{display:flex;gap:10px}
+.modal-btn{flex:1;height:44px;line-height:38px;border:3px solid var(--border);border-radius:0;text-align:center;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 3px 0 var(--border);white-space:nowrap}
+.modal-btn-primary{background:var(--grass-dk);color:#fff}
+.modal-btn-secondary{background:var(--stone);color:#fff}
+
+/* 金币商城 */
+.shop-item{background:var(--card-dk);border:3px solid var(--border);margin:8px 0;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .08s;box-shadow:0 3px 0 var(--border)}
+.shop-item:active{transform:translateY(2px);box-shadow:0 1px 0 var(--border)}
+.shop-emoji{font-size:32px;width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:var(--gold);border:3px solid var(--border);flex-shrink:0}
+.shop-info{flex:1;min-width:0;overflow:hidden}
+.shop-name{font-size:15px;font-weight:700;color:#3A3A3A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.shop-desc{font-size:12px;color:var(--sub);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.shop-price{background:linear-gradient(135deg,#FFD93D,#FFA54A);color:#3A3A3A;padding:4px 12px;border:3px solid var(--border);font-size:13px;font-weight:700;white-space:nowrap;box-shadow:0 2px 0 var(--border);flex-shrink:0}
+</style>
+</head>
+<body>
+
+<!-- ====== 打卡页 ====== -->
+<div id="page-checkin" class="page active">
+  <div class="topbar">
+    <div>
+      <div class="hello">⛏️ <span id="today"></span></div>
+      <div class="hello-sub" id="hello-sub"></div>
+    </div>
+    <div class="res-pills">
+      <div class="res-pill">☀️<span id="sunshine">0</span></div>
+      <div class="res-pill">💰<span id="coin">0</span></div>
+      <div class="res-pill">🛡️<span id="shield">0</span></div>
+    </div>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    <div class="progress-text"><span id="done-count">0</span>/9项完成 · 每项+1☀️</div>
+  </div>
+
+  <div class="card tip-card" id="desktop-tip" style="display:none" onclick="dismissTip()">
+    <div class="tip-title">📌 放桌面，下次点开就打卡</div>
+    <div class="tip-sub">浏览器菜单→添加到主屏幕</div>
+  </div>
+
+  <div class="page-title">📝 今日作业打卡</div>
+  <div class="page-sub">完成一项就点亮一个方块，每项得1阳光☀️</div>
+
+  <div id="subjects-container"></div>
+
+  <div id="bonus-card" class="card bonus-card" style="display:none">
+    <div class="bonus-emoji">🎉</div>
+    <div class="bonus-title">全部完成！</div>
+    <div class="bonus-sub">+3阳光+3颗种子 · 小狗熊今晚不来啦</div>
+    <button class="farm-btn" onclick="goPage('farm')">去农场看看我的菜园 →</button>
+  </div>
+
+  <div id="warn-card" class="card warn-card" style="display:none">
+    <div class="warn-title">⚠️ 还有 <span id="undone-num">0</span> 科未完成</div>
+    <div class="warn-sub">今晚小狗熊会来！补完作业领杀虫剂修复</div>
+  </div>
+</div>
+
+<!-- ====== 农场页 ====== -->
+<div id="page-farm" class="page">
+  <div class="farm-header">
+    <div class="farm-title">🌻 方块农场</div>
+    <div class="farm-sub" id="farm-sub">完成作业解锁种子，种菜得金币~</div>
+  </div>
+  <div class="farm-grid" id="farm-grid"></div>
+  <div class="card" style="margin-top:16px">
+    <div style="font-size:15px;font-weight:700;margin-bottom:8px;color:#3A3A3A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🎒 背包</div>
+    <div id="bag-list" style="font-size:13px;color:var(--sub)">空空如也，去完成作业领取种子吧~</div>
+  </div>
+  <div class="card">
+    <div style="font-size:15px;font-weight:700;margin-bottom:8px;color:#3A3A3A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🛒 道具商店（用☀️兑换）</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="farm-btn" style="flex:1;min-width:45%;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" onclick="buyItem('shield')">🛡️护盾(连打卡3天)</button>
+      <button class="farm-btn" style="flex:1;min-width:45%;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" onclick="buyItem('pest')">💊杀虫剂(5☀️)</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== 金币商城页 ====== -->
+<div id="page-shop" class="page">
+  <div class="farm-header">
+    <div class="farm-title">🛒 金币商城</div>
+    <div class="farm-sub">你有<span id="shop-coin">0</span>💰 · 攒金币换好礼</div>
+  </div>
+  <div class="card">
+    <div id="coin-shop-list"></div>
+  </div>
+</div>
+
+<!-- ====== 统计页 ====== -->
+<div id="page-stat" class="page">
+  <div class="page-title" style="margin:16px 16px 8px">📊 学习统计</div>
+  <div class="page-sub" style="margin:0 16px 12px">看看你有多棒！</div>
+  <div class="card stat-total">
+    <div class="stat-num" id="stat-total">0</div>
+    <div class="stat-label">累计完成学科数</div>
+  </div>
+  <div style="padding:8px 16px">
+    <div class="stat-grid">
+      <div class="stat-mini"><div class="stat-emoji">📚</div><div class="stat-mini-num" id="stat-yu">0</div><div class="stat-mini-label">语文</div></div>
+      <div class="stat-mini"><div class="stat-emoji">🧱</div><div class="stat-mini-num" id="stat-shu">0</div><div class="stat-mini-label">数学</div></div>
+      <div class="stat-mini"><div class="stat-emoji">📖</div><div class="stat-mini-num" id="stat-ying">0</div><div class="stat-mini-label">英语</div></div>
+    </div>
+  </div>
+  <div class="card" style="text-align:center">
+    <div style="font-size:36px;font-weight:700;color:#3A3A3A" id="stat-streak">0</div>
+    <div style="font-size:13px;color:var(--sub)">连续打卡天数</div>
+  </div>
+</div>
+
+<!-- TabBar -->
+<div class="tabbar">
+  <div class="tab active" data-page="checkin" onclick="goPage('checkin')"><div class="tab-icon">📝</div>作业打卡</div>
+  <div class="tab" data-page="farm" onclick="goPage('farm')"><div class="tab-icon">🌻</div>方块农场</div>
+  <div class="tab" data-page="shop" onclick="goPage('shop')"><div class="tab-icon">🛒</div>金币商城</div>
+  <div class="tab" data-page="stat" onclick="goPage('stat')"><div class="tab-icon">📊</div>学习统计</div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div id="modal-container"></div>
+
+<script>
+// ====== 任务定义（语文4项 数学3项 英语2项） ======
+const SUBJECTS = {
+  yuwen:{name:'语文',emoji:'📚',iconCls:'icon-yu',tasks:[
+    {key:'read',name:'阅读理解',desc:'认真做一篇阅读'},
+    {key:'write',name:'写字作业',desc:'每天写两排'},
+    {key:'recite',name:'古诗背诵',desc:'背诵课内必备古诗'},
+    {key:'extracur',name:'课外阅读',desc:'课外读物15分钟'}
+  ],seed:{name:'向日葵种子',emoji:'🌻',key:'sunflower'}},
+  shuxue:{name:'数学',emoji:'🧱',iconCls:'icon-shu',tasks:[
+    {key:'mental',name:'口算练习',desc:'不一样的乘除法一页'},
+    {key:'apply',name:'应用题',desc:'完成2道应用题'},
+    {key:'multitable',name:'乘法口诀',desc:'背诵乘法口诀表'}
+  ],seed:{name:'胡萝卜种子',emoji:'🥕',key:'carrot'}},
+  yingyu:{name:'英语',emoji:'📖',iconCls:'icon-ying',tasks:[
+    {key:'speak',name:'朗读打卡',desc:'大声朗读单词和句子'},
+    {key:'listen',name:'磨耳朵15分钟',desc:'听英文故事15分钟'}
+  ],seed:{name:'郁金香种子',emoji:'🌷',key:'tulip'}}
+};
+const BONUS_SEEDS=[
+  {name:'西红柿种子',emoji:'🍅',key:'tomato'},
+  {name:'草莓种子',emoji:'🍓',key:'strawberry'},
+  {name:'向日葵种子',emoji:'🌻',key:'sunflower_bonus'}
+];
+const CROP_EMOJI={sunflower:'🌻',carrot:'🥕',tulip:'🌷',apple:'🍎',tomato:'🍅',strawberry:'🍓',sunflower_bonus:'🌻'};
+const CROP_COIN={sunflower:10,carrot:10,tulip:10,apple:10,tomato:10,strawberry:10,sunflower_bonus:10}; // ★ 统一10金币
+const STAGE_EMOJI={seed:'🌰',sprout:'🌱',bloom:'🌸',ripe:null};
+
+// ★ 金币商城：看电视和玩游戏都是15分钟
+const COIN_SHOP=[
+  {key:'tv',emoji:'📺',name:'看电视',desc:'奖励看电视15分钟',coin:60},
+  {key:'game',emoji:'🎮',name:'玩游戏',desc:'奖励玩游戏15分钟',coin:80},
+  {key:'toy',emoji:'🧸',name:'买玩具',desc:'可以买一个小玩具',coin:100},
+  {key:'hotel',emoji:'🏨',name:'住酒店',desc:'周末住一晚酒店',coin:200}
+];
+
+let state=loadState();
+function defaultState(){return{
+  user:{sunshine:0,coin:0,streak:0,shield:0,pesticide:0,bag:[],owned:[]},
+  tasks:{yuwen:{},shuxue:{},yingyu:{}},
+  plots:Array.from({length:9},()=>({crop:null,stage:null,health:5,withered:false,plantedAt:0})),
+  stats:{total:0,bySub:{yuwen:0,shuxue:0,yingyu:0}},
+  date:todayStr()
+}}
+function todayStr(){const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function loadState(){
+  let s=JSON.parse(localStorage.getItem('farm_mc_v3')||'null');
+  if(!s)s=defaultState();
+  if(s.date!==todayStr()){
+    applyNightPenalty(s);
+    s.tasks={yuwen:{},shuxue:{},yingyu:{}};
+    s.date=todayStr();
+  }
+  if(!s.user.owned)s.user.owned=[];
+  if(!s.plots||s.plots.length<9)s.plots=Array.from({length:9},()=>({crop:null,stage:null,health:5,withered:false,plantedAt:0}));
+  saveState(s);return s;
+}
+function saveState(s){localStorage.setItem('farm_mc_v3',JSON.stringify(s))}
+
+function applyNightPenalty(s){
+  const undone=['yuwen','shuxue','yingyu'].filter(sub=>{const t=s.tasks[sub]||{};return!SUBJECTS[sub].tasks.every(x=>t[x.key])});
+  if(undone.length===0)return;
+  let bears=undone.length;
+  while(bears>0&&s.user.shield>0){s.user.shield--;bears--;}
+  const plots=s.plots.filter(p=>p.crop);
+  const targets=plots.sort(()=>Math.random()-0.5).slice(0,bears);
+  const fullDestroy=undone.length===3;
+  targets.forEach(p=>{p.health=Math.max(0,p.health-(fullDestroy?5:1));if(p.health<=0)p.withered=true});
+  s.user.coin=Math.max(0,s.user.coin-Math.floor(s.user.coin*0.5));
+}
+
+function toggleTask(sub,key){
+  const wasDone=!!state.tasks[sub][key];
+  state.tasks[sub][key]=!wasDone;
+  const allSubDone=SUBJECTS[sub].tasks.every(t=>state.tasks[sub][t.key]);
+  let prevDone=true;
+  SUBJECTS[sub].tasks.forEach(t=>{if(t.key===key){if(!wasDone)prevDone=false}else{if(!state.tasks[sub][t.key])prevDone=false}});
+
+  if(!wasDone){state.user.sunshine+=1;showToast('✅ 完成！☀️ +1')}
+  else{if(state.user.sunshine>0)state.user.sunshine-=1}
+
+  if(allSubDone&&!prevDone){
+    state.user.bag.push({...SUBJECTS[sub].seed,type:'seed',qty:1});
+    state.stats.bySub[sub]++;state.stats.total++;state.user.streak++;
+    if(state.user.streak>0&&state.user.streak%3===0){state.user.shield++;showToast(`🎉 学科完成！种子+1 连续${state.user.streak}天 🛡️+1`)}
+    else showToast(`🎉 学科完成！${SUBJECTS[sub].seed.emoji}${SUBJECTS[sub].seed.name}已入背包`);
+  }else if(!allSubDone&&prevDone){
+    if(state.stats.bySub[sub]>0)state.stats.bySub[sub]--;
+    if(state.stats.total>0)state.stats.total--;
+    if(state.user.streak>0)state.user.streak--;
+    const idx=state.user.bag.findIndex(b=>b.key===SUBJECTS[sub].seed.key);
+    if(idx>=0)state.user.bag.splice(idx,1);
+  }
+
+  const allDone=['yuwen','shuxue','yingyu'].every(s=>SUBJECTS[s].tasks.every(t=>state.tasks[s][t.key]));
+  if(allDone){
+    if(!state._bonusGiven){
+      state.user.sunshine+=3;
+      BONUS_SEEDS.forEach(seed=>state.user.bag.push({...seed,type:'seed',qty:1}));
+      state._bonusGiven=true;showToast('🌟 三科全完成！+3☀️ +3颗种子！');
+    }
+  }else{state._bonusGiven=false}
+  saveState(state);renderCheckin();
+}
+
+function plantSeed(plotIdx,seedKey){
+  const p=state.plots[plotIdx];
+  if(p.crop)return showToast('这块地已种东西');
+  const idx=state.user.bag.findIndex(b=>b.type==='seed'&&b.key===seedKey&&b.qty>0);
+  if(idx<0)return showToast('种子不足');
+  if(state.user.sunshine<1)return showToast('阳光不足');
+  state.user.sunshine--;
+  if(state.user.bag[idx].qty>1)state.user.bag[idx].qty--;
+  else state.user.bag.splice(idx,1);
+  p.crop=seedKey;p.stage='seed';p.plantedAt=Date.now();p.health=5;p.withered=false;
+  saveState(state);startGrowth(plotIdx);renderFarm();renderCheckin();
+}
+function startGrowth(idx){
+  const tick=()=>{
+    const p=state.plots[idx];if(!p||!p.crop)return;
+    const secs=(Date.now()-p.plantedAt)/1000;
+    if(secs>=6)p.stage='ripe';else if(secs>=4)p.stage='bloom';else if(secs>=2)p.stage='sprout';
+    saveState(state);renderFarm();
+    if(p.stage!=='ripe')setTimeout(tick,1000);
+  }
+  setTimeout(tick,1000);
+}
+function harvest(idx){
+  const p=state.plots[idx];
+  if(p.stage!=='ripe'||p.withered)return showToast('还没成熟或已枯萎');
+  state.user.coin+=10;p.crop=null;p.stage=null;p.plantedAt=0;p.health=5;p.withered=false;
+  saveState(state);showToast(`🌾 收获！+10💰`);renderFarm();renderCheckin();
+}
+function buyItem(type){
+  if(type==='shield'){
+    if(state.user.streak<3)return showToast(`需连续打卡3天（当前${state.user.streak}天）`);
+    if(state.user._shieldClaimedStreak===state.user.streak)return showToast('本轮已兑换护盾');
+    state.user._shieldClaimedStreak=state.user.streak;state.user.shield++;
+    showToast('🛡️ 护盾兑换成功！');
+  }else if(type==='pest'){
+    if(state.user.sunshine<5)return showToast('阳光不足（需5☀️）');
+    state.user.sunshine-=5;state.user.pesticide++;
+    state.plots.forEach(p=>{if(p.crop){p.health=Math.min(5,p.health+3);if(p.health>0)p.withered=false}});
+    showToast('💊 杀虫剂使用！植物恢复健康');
+  }
+  saveState(state);renderFarm();renderCheckin();
+}
+function buyCoinShop(key){
+  const item=COIN_SHOP.find(i=>i.key===key);if(!item)return;
+  if(state.user.owned&&state.user.owned.includes(key))return showToast('已拥有该奖励~');
+  if(state.user.coin<item.coin)return showToast(`金币不足（需${item.coin}💰）`);
+  state.user.coin-=item.coin;if(!state.user.owned)state.user.owned=[];state.user.owned.push(key);
+  saveState(state);showToast(`🎉 兑换成功：${item.emoji}${item.name}！`);renderShop();renderCheckin();
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(t._timer);t._timer=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+function renderCheckin(){
+  const d=new Date();const wk=['日','一','二','三','四','五','六'][d.getDay()];
+  let doneCount=0;
+  ['yuwen','shuxue','yingyu'].forEach(s=>SUBJECTS[s].tasks.forEach(t=>{if(state.tasks[s][t.key])doneCount++}));
+  const allDone=['yuwen','shuxue','yingyu'].every(s=>SUBJECTS[s].tasks.every(t=>state.tasks[s][t.key]));
+  const undone=['yuwen','shuxue','yingyu'].filter(s=>!SUBJECTS[s].tasks.every(t=>state.tasks[s][t.key])).length;
+  document.getElementById('today').textContent=todayStr();
+  document.getElementById('hello-sub').textContent=undone>0?`星期${wk} · 还有${undone}科未完成`:`星期${wk} · 今日全部完成啦！`;
+  document.getElementById('sunshine').textContent=state.user.sunshine;
+  document.getElementById('coin').textContent=state.user.coin;
+  document.getElementById('shield').textContent=state.user.shield;
+  document.getElementById('done-count').textContent=doneCount;
+  document.getElementById('progress-fill').style.width=(doneCount/9*100)+'%';
+  document.getElementById('bonus-card').style.display=allDone?'block':'none';
+  document.getElementById('warn-card').style.display=(!allDone&&undone>0)?'block':'none';
+  document.getElementById('undone-num').textContent=undone;
+
+  const ctn=document.getElementById('subjects-container');ctn.innerHTML='';
+  ['yuwen','shuxue','yingyu'].forEach(sub=>{
+    const subDone=SUBJECTS[sub].tasks.every(t=>state.tasks[sub][t.key]);
+    const card=document.createElement('div');card.className='card sub-block'+(subDone?' is-done':'');
+    let html=`<div class="sub-head"><div class="sub-icon ${SUBJECTS[sub].iconCls}">${SUBJECTS[sub].emoji}</div><div class="sub-info"><div class="sub-title">${SUBJECTS[sub].name}</div><div class="sub-desc">${subDone?'已完成 '+SUBJECTS[sub].seed.emoji+' 种子已入背包':SUBJECTS[sub].tasks.map(t=>t.name).join(' + ')}</div></div><div class="badge ${subDone?'badge-ok':'badge-pending'}">${subDone?'✓':'○'}</div></div>`;
+    SUBJECTS[sub].tasks.forEach(t=>{
+      const done=!!state.tasks[sub][t.key];
+      html+=`<div class="task-row ${done?'done':''}" onclick="toggleTask('${sub}','${t.key}')"><div class="task-left"><div class="task-name">${t.name}</div><div class="task-desc">${t.desc}</div></div><div class="task-check ${done?'checked':''}">${done?'✓':'○'}</div></div>`;
+    });
+    card.innerHTML=html;ctn.appendChild(card);
+  });
+  if(!localStorage.getItem('desktop_tip_shown'))document.getElementById('desktop-tip').style.display='block';
+}
+function dismissTip(){document.getElementById('desktop-tip').style.display='none';localStorage.setItem('desktop_tip_shown','1')}
+
+function renderFarm(){
+  document.getElementById('sunshine').textContent=state.user.sunshine;
+  document.getElementById('coin').textContent=state.user.coin;
+  document.getElementById('shield').textContent=state.user.shield;
+  const undone=['yuwen','shuxue','yingyu'].filter(s=>!SUBJECTS[s].tasks.every(t=>state.tasks[s][t.key]));
+  document.getElementById('farm-sub').textContent=undone.length>0?`⚠️ 还有${undone.length}科未完成，今晚小狗熊会来！`:'完成作业解锁种子，种菜得金币~';
+  const grid=document.getElementById('farm-grid');grid.innerHTML='';
+  state.plots.forEach((p,i)=>{
+    const div=document.createElement('div');
+    div.className='plot'+(p.crop?' '+p.stage:' empty')+(p.withered?' withered':'');
+    let emoji=p.crop?(p.stage==='ripe'?CROP_EMOJI[p.crop]:(STAGE_EMOJI[p.stage]||'🌱')):'➕';
+    div.innerHTML=`<span class="crop-emoji">${emoji}</span>${p.crop?`<div class="plot-health">❤️${p.health}</div>`:''}${p.withered?'<div class="bear">🐻</div>':''}`;
+    div.onclick=()=>{
+      if(!p.crop){const seeds=state.user.bag.filter(b=>b.type==='seed'&&b.qty>0);if(seeds.length===0)return showToast('背包没有种子，去完成作业领取~');showSeedPicker(i,seeds)}
+      else if(p.stage==='ripe'&&!p.withered)harvest(i);
+      else showToast(p.withered?'已枯萎，补完作业用杀虫剂修复':`生长中：${p.stage}`);
+    };
+    grid.appendChild(div);
+  });
+  const bag=document.getElementById('bag-list');
+  const seeds=state.user.bag.filter(b=>b.type==='seed'&&b.qty>0);
+  if(seeds.length===0)bag.textContent='空空如也，去完成作业领取种子吧~';
+  else bag.innerHTML=seeds.map(s=>`${s.emoji} ${s.name} ×${s.qty}`).join('　');
+}
+
+function renderShop(){
+  document.getElementById('shop-coin').textContent=state.user.coin;
+  const list=document.getElementById('coin-shop-list');list.innerHTML='';
+  COIN_SHOP.forEach(item=>{
+    const owned=state.user.owned&&state.user.owned.includes(item.key);
+    const div=document.createElement('div');div.className='shop-item';
+    div.innerHTML=`<div class="shop-emoji">${item.emoji}</div><div class="shop-info"><div class="shop-name">${item.name}</div><div class="shop-desc">${item.desc}</div></div><div class="shop-price">${owned?'已拥有':item.coin+'💰'}</div>`;
+    div.onclick=()=>{if(!owned)buyCoinShop(item.key)};
+    list.appendChild(div);
+  });
+}
+
+function showSeedPicker(plotIdx,seeds){
+  const ctn=document.getElementById('modal-container');
+  let opts=seeds.map(s=>`<div style="padding:12px;border:3px solid #2A2A2A;margin:4px 0;cursor:pointer;background:#E8D5A8" onclick="plantSeed(${plotIdx},'${s.key}');closeModal()">${s.emoji} ${s.name} ×${s.qty}</div>`).join('');
+  ctn.innerHTML=`<div class="modal-mask" onclick="closeModal()"><div class="modal-box" onclick="event.stopPropagation()"><div class="modal-title">🌱 选一颗种子播种</div><div class="modal-content">${opts||'没有种子'}</div><div class="modal-btns"><button class="modal-btn modal-btn-secondary" onclick="closeModal()">取消</button></div></div></div>`;
+}
+function closeModal(){document.getElementById('modal-container').innerHTML=''}
+
+function renderStat(){
+  document.getElementById('stat-total').textContent=state.stats.total;
+  document.getElementById('stat-yu').textContent=state.stats.bySub.yuwen;
+  document.getElementById('stat-shu').textContent=state.stats.bySub.shuxue;
+  document.getElementById('stat-ying').textContent=state.stats.bySub.yingyu;
+  document.getElementById('stat-streak').textContent=state.user.streak;
+}
+
+function goPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.page===name));
+  if(name==='checkin')renderCheckin();if(name==='farm')renderFarm();if(name==='shop')renderShop();if(name==='stat')renderStat();
+}
+
+renderCheckin();
+const hour=new Date().getHours();
+if(hour>=20){
+  const undone=['yuwen','shuxue','yingyu'].filter(s=>!SUBJECTS[s].tasks.every(t=>state.tasks[s][t.key]));
+  if(undone.length>0){
+    setTimeout(()=>{
+      const ctn=document.getElementById('modal-container');
+      ctn.innerHTML=`<div class="modal-mask"><div class="modal-box"><div class="modal-title">⚠️ 小狗熊要来啦</div><div class="modal-content">还有 ${undone.length} 科作业未完成，今晚小狗熊会来破坏你的菜园！快去打卡完成任务。</div><div class="modal-btns"><button class="modal-btn modal-btn-primary" onclick="closeModal();goPage('checkin')">这就去打卡</button><button class="modal-btn modal-btn-secondary" onclick="closeModal()">再看看</button></div></div></div>`;
+    },500);
+  }
+}
+</script>
+</body>
+</html>
